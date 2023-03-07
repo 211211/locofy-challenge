@@ -1,28 +1,58 @@
 function optimiseStyles(input) {
   const { styles, elementClasses } = input;
+  const stylesKeys = Object.keys(styles);
+  if (stylesKeys.length === 0) {
+    return {
+      styles,
+      elementClasses,
+    };
+  }
 
   const counts = {};
   let styleObjectName = "";
-  // we need to find out each property belongs to how many classes
-  function traverse(node) {
-    for (const prop in node) {
-      const value = node[prop];
-      if (typeof value === "object") {
-        styleObjectName = prop;
-        traverse(value);
-      } else {
-        const key = `${prop}:${value}`;
-        if (!counts[key]) {
-          counts[key] = [styleObjectName];
+
+  // Initialize queue for BFS
+  const queue = [];
+  const traversed = new Set(); // keep track of objects that have already been traversed
+
+  queue.push({ node: styles, styleObjectName: "" });
+
+  // BFS algorithm to traverse styles object
+  // Time complexity: O(n)
+  // where n is the total number of properties in the styles object and any nested objects within it.
+  // Each property is visited exactly once,
+  // and the number of properties visited is proportional to the total number of properties in the object.
+  // Space complexity: O(n)
+  while (queue.length) {
+    const { node, styleObjectName } = queue.shift();
+
+    // check if object has already been traversed
+    if (traversed.has(node)) {
+      continue;
+    }
+    traversed.add(node);
+
+    if (node !== null && typeof node === "object") {
+      // add null and object check
+      for (const prop in node) {
+        const value = node[prop];
+        // if (!value) {
+        //   continue
+        // }
+
+        if (typeof value === "object" && value) {
+          queue.push({ node: value, styleObjectName: prop });
         } else {
-          counts[key].push(styleObjectName);
+          const key = `${prop}:${value}`;
+          if (!counts[key]) {
+            counts[key] = [styleObjectName];
+          } else {
+            counts[key].push(styleObjectName);
+          }
         }
       }
     }
   }
-  styleObjectName = "";
-
-  traverse(styles);
 
   const commonProps = {};
   const uniqueProps = {};
@@ -48,7 +78,9 @@ function optimiseStyles(input) {
     } else {
       acc[styleName][key] = value;
     }
-    customElementClasses[styleName] = new Set([styleName]);
+    if (styleName) {
+      customElementClasses[styleName] = new Set([styleName]);
+    }
     return acc;
   }, {});
 
@@ -65,13 +97,15 @@ function optimiseStyles(input) {
       acc[className][key] = value;
     }
 
-    styleName.forEach((style) => {
-      if (!customElementClasses[style]) {
-        customElementClasses[style] = new Set([className]);
-      } else {
-        customElementClasses[style].add(className);
-      }
-    });
+    styleName
+      .filter((style) => style !== "")
+      .forEach((style) => {
+        if (!customElementClasses[style]) {
+          customElementClasses[style] = new Set([className]);
+        } else {
+          customElementClasses[style].add(className);
+        }
+      });
     return acc;
   }, {});
 
@@ -82,16 +116,24 @@ function optimiseStyles(input) {
 
   const _elementClasses = {};
   for (let [key, value] of Object.entries(elementClasses)) {
-    value.forEach((element) => {
-      if (!_elementClasses[key]) {
-        _elementClasses[key] = outputElementClasses[element];
-      } else {
-        // remove duplicate classes
-        _elementClasses[key] = Array.from(
-          new Set([..._elementClasses[key], ...outputElementClasses[element]])
-        );
-      }
-    });
+    if (!value || value.length === 0) {
+      _elementClasses[key] = [];
+    } else {
+      value.forEach((element) => {
+        if (!_elementClasses[key]) {
+          if (!element) {
+            _elementClasses[key] = [element];
+          } else {
+            _elementClasses[key] = outputElementClasses[element];
+          }
+        } else {
+          // remove duplicate classes
+          _elementClasses[key] = Array.from(
+            new Set([..._elementClasses[key], ...outputElementClasses[element]])
+          );
+        }
+      });
+    }
   }
 
   return {
@@ -143,6 +185,7 @@ const styles = {
 console.log(
   optimiseStyles({
     styles: {
+      // firstBox: null,
       firstBox: {
         backgroundColor: "red",
         width: 200,
@@ -171,11 +214,22 @@ console.log(
         borderWidth: 2,
         margin: 16,
       },
+      // secondBox: null,
+      // thirdBox: {
+      //   backgroundColor: "blue",
+      //   width: 150,
+      //   height: 50,
+      //   alignSelf: "center",
+      //   borderRadius: 20,
+      //   borderColor: "black",
+      //   borderWidth: 2,
+      //   margin: 16,
+      // },
     },
     elementClasses: {
-      firstBox: ["firstBox"],
-      secondBox: ["secondBox"],
-      thirdBox: ["thirdBox"],
+      firstBox1: ["firstBox"],
+      secondBox2: ["secondBox"],
+      thirdBox3: ["thirdBox"],
     },
   })
 );
