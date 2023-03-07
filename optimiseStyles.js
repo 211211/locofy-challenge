@@ -104,8 +104,8 @@ function optimiseStyles(input) {
       ...uniqStylesObj,
       ...commonStylesObj,
     },
-    elementClasses: outputElementClasses,
-    // _elementClasses: _elementClasses,
+    // elementClasses: outputElementClasses,
+    elementClasses: _elementClasses,
   };
 }
 
@@ -173,7 +173,7 @@ console.log(
       },
     },
     elementClasses: {
-      firstBox: ["firstBox", "secondBox"],
+      firstBox: ["firstBox"],
       secondBox: ["secondBox"],
       thirdBox: ["thirdBox"],
     },
